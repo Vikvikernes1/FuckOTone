@@ -4,17 +4,16 @@ Run with: python main.py
 """
 
 from pathlib import Path
-import math
 import sys
 import tkinter as tk
 from tkinter import messagebox
 
-from PIL import Image, ImageDraw, ImageFilter, ImageTk
+from PIL import Image, ImageDraw, ImageSequence, ImageTk
 
 
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 WORLD_PATH = ROOT / "world.png"
-FUCK_PATH = ROOT / "fuck.png"
+FUCK_PATH = ROOT / "fuck.gif"
 FURRY_PATH = ROOT / "furry.png"
 
 
@@ -28,10 +27,10 @@ class ClickerApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
         self.world = Image.open(WORLD_PATH).convert("RGBA")
-        self.fuck = Image.open(FUCK_PATH).convert("RGBA")
+        self.fuck_frames = self.load_gif_frames()
         self.furry = Image.open(FURRY_PATH).convert("RGBA")
         self.animation_id = None
-        self.frame = 0
+        self.fuck_frame_index = 0
         self.current_photo = None
         self.show_menu()
 
@@ -41,6 +40,15 @@ class ClickerApp(tk.Tk):
             self.animation_id = None
         for child in self.winfo_children():
             child.destroy()
+
+    @staticmethod
+    def load_gif_frames():
+        frames = []
+        with Image.open(FUCK_PATH) as gif:
+            for frame in ImageSequence.Iterator(gif):
+                duration = frame.info.get("duration", 50)
+                frames.append((frame.convert("RGBA"), max(20, duration)))
+        return frames
 
     def show_menu(self):
         self.clear()
@@ -99,7 +107,6 @@ class ClickerApp(tk.Tk):
         self.make_button(bottom, "← В меню", self.show_menu, "#303747").pack(
             pady=10
         )
-        self.bind("<Configure>", self.redraw)
 
     @staticmethod
     def fit(image, width, height):
@@ -109,6 +116,7 @@ class ClickerApp(tk.Tk):
 
     def show_world(self):
         self.make_view()
+        self.bind("<Configure>", self.redraw)
         self.redraw()
 
     def redraw(self, _event=None):
@@ -127,67 +135,46 @@ class ClickerApp(tk.Tk):
 
     def show_miet(self):
         self.make_view()
-        self.frame = 0
-        self.animate_miet()
+        self.bind("<Configure>", self.render_miet)
+        self.fuck_frame_index = 0
+        self.play_miet_frame()
 
-    def animate_miet(self):
-        if not self.winfo_exists() or not hasattr(self, "canvas"):
+    def render_miet(self, _event=None):
+        if not hasattr(self, "canvas"):
             return
         width = max(1, self.canvas.winfo_width())
         height = max(1, self.canvas.winfo_height())
         if width < 10 or height < 10:
-            self.animation_id = self.after(30, self.animate_miet)
             return
 
-        t = self.frame / 36.0
-        pulse = 1.0 + 0.035 * math.sin(t * math.tau)
-        shake = int(4 * math.sin(t * math.tau * 2))
-        base = self.fuck.resize(
-            (int(self.fuck.width * pulse), int(self.fuck.height * pulse)),
-            Image.Resampling.LANCZOS,
-        )
+        base = self.fit(self.fuck_frames[self.fuck_frame_index][0], width, height)
         scene = Image.new("RGBA", (width, height), "#08090d")
-        scene.alpha_composite(base, ((width - base.width) // 2 + shake, (height - base.height) // 2))
+        base_x = (width - base.width) // 2
+        base_y = (height - base.height) // 2
+        scene.alpha_composite(base, (base_x, base_y))
 
         # Replace the original face with the supplied furry reference.
         face = self.furry.crop((55, 120, 810, 850))
-        face_size = int(min(width, height) * (0.25 + 0.015 * math.sin(t * math.tau)))
+        face_size = int(min(width, height) * 0.265)
         face = face.resize((face_size, face_size), Image.Resampling.LANCZOS)
         mask = Image.new("L", face.size, 0)
         ImageDraw.Draw(mask).ellipse((2, 2, face.width - 2, face.height - 2), fill=255)
         face.putalpha(mask)
-        face_x = width // 2 - face.width // 2 + shake
+        face_x = width // 2 - face.width // 2
         face_y = height // 2 - int(face.height * 0.73)
         scene.alpha_composite(face, (face_x, face_y))
-
-        # A harmless, looped cartoon motion effect aimed at the mouth.
-        draw = ImageDraw.Draw(scene)
-        travel = (math.sin(t * math.tau) + 1) / 2
-        mouth_x = width // 2 - int(face.width * 0.20)
-        mouth_y = face_y + int(face.height * 0.62)
-        start_x = width + 30 - int(travel * (width * 0.48))
-        for offset in (-18, 18):
-            x = start_x + offset
-            draw.rounded_rectangle(
-                (x, mouth_y - 9 + offset // 3, x + 100, mouth_y + 9 + offset // 3),
-                radius=9,
-                fill="#f0e5d7",
-                outline="#8c766a",
-                width=2,
-            )
-        draw.arc(
-            (mouth_x - 30, mouth_y - 18, mouth_x + 35, mouth_y + 24),
-            15,
-            165,
-            fill="#ffcf57",
-            width=4,
-        )
 
         self.current_photo = ImageTk.PhotoImage(scene)
         self.canvas.delete("all")
         self.canvas.create_image(width // 2, height // 2, image=self.current_photo)
-        self.frame = (self.frame + 1) % 72
-        self.animation_id = self.after(45, self.animate_miet)
+
+    def play_miet_frame(self):
+        if not hasattr(self, "canvas") or not self.winfo_exists():
+            return
+        self.render_miet()
+        _, duration = self.fuck_frames[self.fuck_frame_index]
+        self.fuck_frame_index = (self.fuck_frame_index + 1) % len(self.fuck_frames)
+        self.animation_id = self.after(duration, self.play_miet_frame)
 
 
 if __name__ == "__main__":

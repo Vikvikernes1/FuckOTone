@@ -47,7 +47,7 @@ jobs:
           python -m PyInstaller --onefile --windowed
           --name FuckOTone
           --add-data "world.png${{ matrix.separator }}."
-          --add-data "fuck.png${{ matrix.separator }}."
+          --add-data "fuck.gif${{ matrix.separator }}."
           --add-data "furry.png${{ matrix.separator }}."
           main.py
 

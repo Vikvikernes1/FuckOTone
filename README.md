@@ -18,7 +18,7 @@ python main.py
 
 На Linux может понадобиться системный пакет `python3-tk`.
 
-Приложение использует `world.png`, `fuck.png` и `furry.png` из корня проекта. Интернет для работы не нужен.
+Приложение использует `world.png`, `fuck.gif` и `furry.png` из корня проекта. `fuck.gif` воспроизводится с исходной задержкой кадров, а лицо из `furry.png` накладывается на каждый кадр. Интернет для работы не нужен.
 
 ## Сборка в отдельное приложение локально
 
@@ -26,7 +26,7 @@ python main.py
 
 ```bash
 python -m pip install pyinstaller
-python -m PyInstaller --onefile --windowed --name FuckOTone --add-data "world.png:." --add-data "fuck.png:." --add-data "furry.png:." main.py
+python -m PyInstaller --onefile --windowed --name FuckOTone --add-data "world.png:." --add-data "fuck.gif:." --add-data "furry.png:." main.py
 ```
 
 На Windows в `--add-data` используется разделитель `;` вместо `:`. Сборку нужно выполнять отдельно на каждой целевой ОС.
