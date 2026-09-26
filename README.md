@@ -31,14 +31,3 @@ python -m PyInstaller --onefile --windowed --name FuckOTone --add-data "world.pn
 
 На Windows в `--add-data` используется разделитель `;` вместо `:`. Сборку нужно выполнять отдельно на каждой целевой ОС.
 
-## GitHub Actions
-
-Workflow `.github/workflows/build.yml` автоматически собирает приложения для Windows, macOS и Linux при push или Pull Request. Готовые архивы доступны во вкладке **Actions → нужный запуск → Artifacts**.
-
-Для публикации проекта:
-
-```bash
-git remote add origin https://github.com/<ваш-пользователь>/FuckOTone.git
-git branch -M main
-git push -u origin main
-```
